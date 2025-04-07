@@ -1,1 +1,1 @@
-# financeapp
+# FinancIA

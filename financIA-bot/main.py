@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 import logging
-from telegram.ext import Application, CommandHandler
+from telegram.ext import (
+    Application,
+    CommandHandler,
+    MessageHandler,  # Adicione esta importação
+    filters          # E esta também
+)
 from financIA.config import Config
 from financIA.core.database import DatabaseManager
 from financIA.bot.handlers import BotHandlers
@@ -51,7 +56,7 @@ def main() -> None:
         
         setup_handlers(application, bot_handlers)
         
-        logger.info("Bot iniciado. Press Ctrl+C to exit.")
+        logger.info("Bot iniciado. Pressione Ctrl+C para sair.")
         application.run_polling()
         
     except Exception as e:

@@ -1,0 +1,10 @@
+Metadata-Version: 2.4
+Name: financIA-bot
+Version: 0.1.0
+Summary: Chatbot financeiro com análise inteligente
+Requires-Python: >=3.10
+Requires-Dist: python-telegram-bot>=20.0
+Requires-Dist: pandas>=2.0.0
+Requires-Dist: sqlalchemy>=2.0.0
+Requires-Dist: transformers[torch]>=4.30.0
+Requires-Dist: python-dotenv>=1.0.0

@@ -1,6 +1,9 @@
 from telegram import Update
 from telegram.ext import CallbackContext
-from financIA.core.database import DatabaseManager
+from src.financIA.core.database import DatabaseManager
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent.parent))
 
 class BotHandlers:
     def __init__(self, db: DatabaseManager):

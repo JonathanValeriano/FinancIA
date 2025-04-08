@@ -1,0 +1,15 @@
+README.md
+pyproject.toml
+src/financIA/__init__.py
+src/financIA/config.py
+src/financIA/bot/__init__.py
+src/financIA/bot/handlers.py
+src/financIA/core/__init__.py
+src/financIA/core/database.py
+src/financIA/ml/__init__.py
+src/financIA/utils/__init__.py
+src/financIA_bot.egg-info/PKG-INFO
+src/financIA_bot.egg-info/SOURCES.txt
+src/financIA_bot.egg-info/dependency_links.txt
+src/financIA_bot.egg-info/requires.txt
+src/financIA_bot.egg-info/top_level.txt

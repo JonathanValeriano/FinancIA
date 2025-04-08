@@ -6,9 +6,9 @@ from telegram.ext import (
     MessageHandler,  # Adicione esta importação
     filters          # E esta também
 )
-from financIA.config import Config
-from financIA.core.database import DatabaseManager
-from financIA.bot.handlers import BotHandlers
+from src.financIA.core.database import DatabaseManager
+from src.financIA.bot.handlers import BotHandlers
+from src.financIA.config import Config
 
 # Configuração básica de logging
 logging.basicConfig(

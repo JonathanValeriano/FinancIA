@@ -1,0 +1,19 @@
+[project]
+name = "financIA-bot"
+version = "0.1.0"
+description = "Chatbot financeiro com análise inteligente"
+requires-python = ">=3.10"
+dependencies = [
+    "python-telegram-bot>=20.0",
+    "pandas>=2.0.0",
+    "sqlalchemy>=2.0.0",
+    "transformers[torch]>=4.30.0",
+    "python-dotenv>=1.0.0"
+]
+
+[build-system]
+requires = ["setuptools>=65.0.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]  # Procura pacotes apenas em src/

@@ -1,7 +1,7 @@
 import sqlite3
 from pathlib import Path
 import logging
-from financIA.config import Config
+from src.financIA.config import Config
 
 logger = logging.getLogger(__name__)
 

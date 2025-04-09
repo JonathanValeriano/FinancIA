@@ -3,12 +3,15 @@ import logging
 from telegram.ext import (
     Application,
     CommandHandler,
-    MessageHandler,  # Adicione esta importação
-    filters          # E esta também
+    MessageHandler,
+    CallbackQueryHandler,
+    filters
 )
 from src.financIA.core.database import DatabaseManager
 from src.financIA.bot.handlers import BotHandlers
 from src.financIA.config import Config
+from src.integrations.open_finance import OpenFinanceIntegration
+from src.services.analysis_service import AnalysisService
 
 # Configuração básica de logging
 logging.basicConfig(
@@ -23,6 +26,7 @@ async def post_init(application: Application) -> None:
         ('start', "Inicia o bot"),
         ('saldo', "Mostra seu saldo atual"),
         ('extrato', "Mostra últimas transações"),
+        ('conectar_openfinance', "Conecta ao Open Finance")
     ])
 
 def setup_handlers(application: Application, handlers: BotHandlers) -> None:
@@ -31,8 +35,13 @@ def setup_handlers(application: Application, handlers: BotHandlers) -> None:
     application.add_handler(CommandHandler("start", handlers.start))
     application.add_handler(CommandHandler("saldo", handlers.handle_balance))
     application.add_handler(CommandHandler("extrato", handlers.handle_statement))
+    application.add_handler(CommandHandler("conectar_openfinance", handlers.handle_open_finance_connect))
 
-    # Handler para mensagens não-comando
+    # Handlers para botões inline
+    application.add_handler(CallbackQueryHandler(handlers.handle_open_finance_connect, pattern='^connect_of$'))
+    application.add_handler(CallbackQueryHandler(handlers.handle_cancel_of, pattern='^cancel_of$'))
+
+    # Handler para mensagens não-comando (incluindo tokens Open Finance)
     application.add_handler(MessageHandler(
         filters.TEXT & ~filters.COMMAND,
         handlers.handle_message
@@ -46,7 +55,17 @@ def main() -> None:
         
         # Inicializa componentes
         db_manager = DatabaseManager()
-        bot_handlers = BotHandlers(db_manager)
+        
+        # Configura Open Finance se disponível
+        of_client = None
+        if Config.OPEN_FINANCE_CLIENT_ID and Config.OPEN_FINANCE_CLIENT_SECRET:
+            of_client = OpenFinanceIntegration(
+                Config.OPEN_FINANCE_CLIENT_ID,
+                Config.OPEN_FINANCE_CLIENT_SECRET
+            )
+        
+        analysis_service = AnalysisService(db_manager, of_client)
+        bot_handlers = BotHandlers(db_manager, analysis_service)
         
         # Cria e configura a aplicação
         application = Application.builder() \

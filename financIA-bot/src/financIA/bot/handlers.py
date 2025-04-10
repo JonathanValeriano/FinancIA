@@ -1,10 +1,19 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import CallbackContext, CallbackQueryHandler
+from telegram.ext import CallbackContext, MessageHandler, filters
+from pathlib import Path
 from datetime import datetime
-import requests
+import tempfile
+import logging
 from typing import Dict, Any
+import pandas as pd
+
 from ..core.database import DatabaseManager
-from src.services.analysis_service import AnalysisService
+from ..services.analysis_service import AnalysisService
+from ..file_parsers.bank_parser import BankParserFactory
+from ..utils.file_validation import validate_bank_statement
+from ..config import Config
+
+logger = logging.getLogger(__name__)
 
 class BotHandlers:
     def __init__(self, db: DatabaseManager, analysis: AnalysisService):
@@ -12,17 +21,22 @@ class BotHandlers:
         self.analysis = analysis
     
     async def start(self, update: Update, context: CallbackContext) -> None:
-        """Menu principal com Open Finance"""
+        """Menu principal com todas as opções"""
         user = update.effective_user
         keyboard = [
-            [InlineKeyboardButton("📊 Saldo", callback_data='balance')],
-            [InlineKeyboardButton("📋 Extrato", callback_data='statement')],
-            [InlineKeyboardButton("🔗 Conectar Open Finance", callback_data='connect_of')],
-            [InlineKeyboardButton("🔄 Sincronizar Dados", callback_data='sync_of')]
+            [InlineKeyboardButton("📊 Saldo", callback_data='balance'),
+             InlineKeyboardButton("📋 Extrato", callback_data='statement')],
+            [InlineKeyboardButton("🔗 Conectar Open Finance", callback_data='connect_of'),
+             InlineKeyboardButton("🔄 Sincronizar", callback_data='sync_of')],
+            [InlineKeyboardButton("📤 Enviar Extrato", callback_data='upload_file')]
         ]
         
         await update.message.reply_text(
-            f"👋 Olá {user.first_name}! Eu sou seu assistente financeiro.",
+            f"👋 Olá {user.first_name}! Eu sou seu assistente financeiro.\n\n"
+            "Você pode:\n"
+            "- Ver seu saldo e extrato\n"
+            "- Conectar bancos via Open Finance\n"
+            "- Enviar extratos bancários",
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
     
@@ -33,7 +47,7 @@ class BotHandlers:
         
         await update.message.reply_text(
             f"📊 Seu saldo atual é: R$ {balance:.2f}\n\n"
-            "Atualizado em: " + datetime.now().strftime('%d/%m/%Y %H:%M')
+            f"Atualizado em: {datetime.now().strftime('%d/%m/%Y %H:%M')}"
         )
     
     async def handle_statement(self, update: Update, context: CallbackContext) -> None:
@@ -51,8 +65,10 @@ class BotHandlers:
         """Handler para mensagens não-comando"""
         if context.user_data.get('awaiting_of_token'):
             await self.handle_open_finance_token(update, context)
+        elif context.user_data.get('awaiting_file_upload'):
+            await self.handle_file_upload(update, context)
         else:
-            await update.message.reply_text("Por favor use um comando ou toque nos botões abaixo:")
+            await update.message.reply_text("Por favor use os botões do menu:")
             await self.start(update, context)
     
     # --- Open Finance Handlers ---
@@ -90,8 +106,7 @@ class BotHandlers:
             reply_markup=None
         )
         
-        if 'awaiting_of_token' in context.user_data:
-            del context.user_data['awaiting_of_token']
+        context.user_data.pop('awaiting_of_token', None)
     
     async def handle_open_finance_token(self, update: Update, context: CallbackContext) -> None:
         """Processa token de autorização do Open Finance"""
@@ -114,6 +129,7 @@ class BotHandlers:
             )
             
         except Exception as e:
+            logger.error(f"Erro na conexão Open Finance: {str(e)}")
             await update.message.reply_text(
                 f"❌ Falha na conexão: {str(e)}\n\n"
                 "Por favor tente novamente ou contate o suporte."
@@ -151,17 +167,106 @@ class BotHandlers:
             )
             
         except Exception as e:
+            logger.error(f"Erro na sincronização: {str(e)}")
             await update.message.reply_text(
                 f"❌ Falha na sincronização: {str(e)}\n\n"
                 "Tentando novamente em 5 minutos..."
             )
-
+    
+    # --- File Upload Handlers ---
+    
+    async def initiate_file_upload(self, update: Update, context: CallbackContext) -> None:
+        """Inicia o processo de upload de arquivo"""
+        query = update.callback_query
+        await query.answer()
+        
+        instructions = (
+            "📤 Envie seu extrato bancário (CSV ou Excel):\n\n"
+            "1. Vá até o internet banking\n"
+            "2. Exporte o extrato como CSV ou Excel\n"
+            "3. Envie o arquivo aqui\n\n"
+            "⚠️ Formatos suportados: .csv, .xlsx, .xls\n"
+            "⚠️ Tamanho máximo: 5MB"
+        )
+        
+        await query.edit_message_text(
+            instructions,
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("❌ Cancelar", callback_data='cancel_upload')]
+            ])
+        )
+        
+        context.user_data['awaiting_file_upload'] = True
+    
+    async def handle_cancel_upload(self, update: Update, context: CallbackContext) -> None:
+        """Cancela o processo de upload"""
+        query = update.callback_query
+        await query.answer()
+        
+        await query.edit_message_text(
+            "❌ Upload de arquivo cancelado.",
+            reply_markup=None
+        )
+        
+        context.user_data.pop('awaiting_file_upload', None)
+    
+    async def handle_file_upload(self, update: Update, context: CallbackContext) -> None:
+        """Processa arquivos bancários enviados"""
+        if not context.user_data.get('awaiting_file_upload'):
+            await update.message.reply_text("Por favor inicie o upload usando o botão no menu.")
+            return
+        
+        user = update.effective_user
+        document = update.message.document
+        
+        # Verifica tamanho do arquivo (max 5MB)
+        if document.file_size > 5 * 1024 * 1024:
+            await update.message.reply_text("❌ Arquivo muito grande. Tamanho máximo: 5MB")
+            return
+        
+        file_ext = Path(document.file_name).suffix.lower()
+        if file_ext not in ['.csv', '.xlsx', '.xls']:
+            await update.message.reply_text("❌ Formato não suportado. Envie CSV ou Excel.")
+            return
+        
+        try:
+            # Cria diretório para uploads do usuário
+            user_dir = Path(Config.UPLOADS_DIR) / str(user.id)
+            user_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Faz download do arquivo
+            file_path = user_dir / f"extrato_{datetime.now().strftime('%Y%m%d_%H%M%S')}{file_ext}"
+            file = await document.get_file()
+            await file.download_to_drive(file_path)
+            
+            # Processa o arquivo
+            bank_type = validate_bank_statement(file_path)
+            transactions = self.analysis.process_file(file_path, bank_type)
+            
+            await update.message.reply_text(
+                f"✅ Extrato processado com sucesso!\n\n"
+                f"• Banco: {bank_type.value}\n"
+                f"• Transações importadas: {len(transactions)}\n"
+                f"• Saldo atualizado: R$ {self.db.get_balance(user.id):.2f}",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("📋 Ver Extrato", callback_data='statement')]
+                ])
+            )
+            
+        except ValueError as e:
+            await update.message.reply_text(f"❌ Erro no arquivo: {str(e)}")
+        except Exception as e:
+            logger.error(f"Erro ao processar arquivo: {str(e)}", exc_info=True)
+            await update.message.reply_text("❌ Ocorreu um erro ao processar seu arquivo.")
+        finally:
+            context.user_data.pop('awaiting_file_upload', None)
+    
     # --- Helper Methods ---
     
     def _exchange_token(self, auth_code: str) -> Dict[str, Any]:
         """Implementação real da troca de tokens OAuth2"""
         response = requests.post(
-            "https://api.openfinance.example/oauth/token",
+            Config.OPEN_FINANCE_TOKEN_URL,
             auth=(Config.OPEN_FINANCE_CLIENT_ID, Config.OPEN_FINANCE_CLIENT_SECRET),
             data={
                 'grant_type': 'authorization_code',
@@ -172,7 +277,7 @@ class BotHandlers:
         )
         
         if response.status_code != 200:
-            raise Exception("Falha na autenticação com o banco")
+            raise Exception(f"Falha na autenticação: {response.text}")
         
         data = response.json()
         return {

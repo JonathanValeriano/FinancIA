@@ -13,7 +13,7 @@ from src.financIA.config import Config
 from src.integrations.open_finance import OpenFinanceIntegration
 from src.services.analysis_service import AnalysisService
 
-# Configuração básica de logging
+# Configuração de logging
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
@@ -27,18 +27,20 @@ async def post_init(application: Application) -> None:
         ('saldo', "Mostra seu saldo atual"),
         ('extrato', "Mostra últimas transações"),
         ('conectar_openfinance', "Conecta ao Open Finance"),
-        ('sincronizar', "Sincroniza dados com Open Finance")
+        ('sincronizar', "Sincroniza dados com Open Finance"),
+        ('enviar_extrato', "Envia extrato bancário")
     ])
 
 def setup_handlers(application: Application, handlers: BotHandlers) -> None:
-    """Configura todos os handlers do bot com os novos recursos"""
+    """Configura todos os handlers do bot"""
     # Comandos básicos
     command_handlers = [
         CommandHandler("start", handlers.start),
         CommandHandler("saldo", handlers.handle_balance),
         CommandHandler("extrato", handlers.handle_statement),
         CommandHandler("conectar_openfinance", handlers.handle_open_finance_connect),
-        CommandHandler("sincronizar", handlers.handle_open_finance_sync)
+        CommandHandler("sincronizar", handlers.handle_open_finance_sync),
+        CommandHandler("enviar_extrato", handlers.initiate_file_upload)
     ]
     
     # Handlers para botões inline
@@ -47,34 +49,35 @@ def setup_handlers(application: Application, handlers: BotHandlers) -> None:
         CallbackQueryHandler(handlers.handle_statement, pattern='^statement$'),
         CallbackQueryHandler(handlers.handle_open_finance_connect, pattern='^connect_of$'),
         CallbackQueryHandler(handlers.handle_cancel_of, pattern='^cancel_of$'),
-        CallbackQueryHandler(handlers.handle_open_finance_sync, pattern='^sync_of$')
+        CallbackQueryHandler(handlers.handle_open_finance_sync, pattern='^sync_of$'),
+        CallbackQueryHandler(handlers.initiate_file_upload, pattern='^upload_file$'),
+        CallbackQueryHandler(handlers.handle_cancel_upload, pattern='^cancel_upload$')
     ]
     
-    # Handler para mensagens não-comando
-    message_handler = MessageHandler(
-        filters.TEXT & ~filters.COMMAND,
-        handlers.handle_message
-    )
+    # Handlers para mensagens
+    message_handlers = [
+        MessageHandler(filters.TEXT & ~filters.COMMAND, handlers.handle_message),
+        MessageHandler(filters.Document.ALL, handlers.handle_file_upload)
+    ]
     
-    # Adiciona todos os handlers de uma vez
-    application.add_handlers(command_handlers + callback_handlers + [message_handler])
+    # Adiciona todos os handlers
+    application.add_handlers(command_handlers + callback_handlers + message_handlers)
 
 def main() -> None:
-    """Ponto principal de execução com tratamento de erros aprimorado"""
+    """Ponto principal de execução"""
     try:
-        # Garante que diretórios existam
         Config.ensure_dirs()
         
         # Inicializa componentes
         db_manager = DatabaseManager()
         
-        # Configura Open Finance se disponível
+        # Configura Open Finance
         of_client = None
         if Config.OPEN_FINANCE_CLIENT_ID and Config.OPEN_FINANCE_CLIENT_SECRET:
             of_client = OpenFinanceIntegration(
                 Config.OPEN_FINANCE_CLIENT_ID,
                 Config.OPEN_FINANCE_CLIENT_SECRET,
-                redirect_uri=Config.OPEN_FINANCE_REDIRECT_URI
+                Config.OPEN_FINANCE_REDIRECT_URI
             )
         
         analysis_service = AnalysisService(db_manager, of_client)
@@ -92,7 +95,7 @@ def main() -> None:
         application.run_polling()
         
     except Exception as e:
-        logger.exception(f"Falha crítica na inicialização: {str(e)}")
+        logger.exception("Falha crítica na inicialização")
         raise
 
 if __name__ == "__main__":

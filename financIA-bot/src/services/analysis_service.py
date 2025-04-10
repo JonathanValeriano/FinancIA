@@ -1,4 +1,4 @@
-from src.financIA.integrations.open_finance import OpenFinanceIntegration
+from ..integrations.open_finance import OpenFinanceIntegration
 from src.financIA.core.categorizer import SmartCategorizer
 from typing import Union, List, Dict  # Importação consolidada
 

@@ -10,6 +10,7 @@ class Config:
     BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
     OPEN_FINANCE_CLIENT_ID = os.getenv('OPEN_FINANCE_CLIENT_ID')
     OPEN_FINANCE_CLIENT_SECRET = os.getenv('OPEN_FINANCE_CLIENT_SECRET')
+    OPEN_FINANCE_REDIRECT_URI = os.getenv('OPEN_FINANCE_REDIRECT_URI', 'https://seu.dominio/callback')
     
     @classmethod
     def ensure_dirs(cls):

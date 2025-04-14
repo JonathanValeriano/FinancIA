@@ -9,6 +9,9 @@ dependencies = [
     "sqlalchemy>=2.0.0",
     "transformers[torch]>=4.30.0",
     "python-dotenv>=1.0.0"
+    "sentence-transformers>=2.2.2"
+    "scikit-learn>=1.0.0"
+    "torch>=2.0.0"
 ]
 
 [build-system]

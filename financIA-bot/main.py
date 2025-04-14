@@ -10,8 +10,9 @@ from telegram.ext import (
 from src.financIA.core.database import DatabaseManager
 from src.financIA.bot.handlers import BotHandlers
 from src.financIA.config import Config
-from src.integrations.open_finance import OpenFinanceIntegration
-from src.services.analysis_service import AnalysisService
+from src.financIA.integrations.open_finance import OpenFinanceIntegration
+from src.financIA.services.analysis_service import AnalysisService
+
 
 # Configuração de logging
 logging.basicConfig(

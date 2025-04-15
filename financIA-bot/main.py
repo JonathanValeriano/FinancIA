@@ -13,7 +13,6 @@ from src.financIA.config import Config
 from src.financIA.integrations.open_finance import OpenFinanceIntegration
 from src.financIA.services.analysis_service import AnalysisService
 
-
 # Configuração de logging
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -43,7 +42,7 @@ def setup_handlers(application: Application, handlers: BotHandlers) -> None:
         CommandHandler("sincronizar", handlers.handle_open_finance_sync),
         CommandHandler("enviar_extrato", handlers.initiate_file_upload)
     ]
-    
+
     # Handlers para botões inline
     callback_handlers = [
         CallbackQueryHandler(handlers.handle_balance, pattern='^balance$'),
@@ -54,13 +53,13 @@ def setup_handlers(application: Application, handlers: BotHandlers) -> None:
         CallbackQueryHandler(handlers.initiate_file_upload, pattern='^upload_file$'),
         CallbackQueryHandler(handlers.handle_cancel_upload, pattern='^cancel_upload$')
     ]
-    
+
     # Handlers para mensagens
     message_handlers = [
         MessageHandler(filters.TEXT & ~filters.COMMAND, handlers.handle_message),
         MessageHandler(filters.Document.ALL, handlers.handle_file_upload)
     ]
-    
+
     # Adiciona todos os handlers
     application.add_handlers(command_handlers + callback_handlers + message_handlers)
 
@@ -68,10 +67,10 @@ def main() -> None:
     """Ponto principal de execução"""
     try:
         Config.ensure_dirs()
-        
+
         # Inicializa componentes
         db_manager = DatabaseManager()
-        
+
         # Configura Open Finance
         of_client = None
         if Config.OPEN_FINANCE_CLIENT_ID and Config.OPEN_FINANCE_CLIENT_SECRET:
@@ -80,23 +79,25 @@ def main() -> None:
                 Config.OPEN_FINANCE_CLIENT_SECRET,
                 Config.OPEN_FINANCE_REDIRECT_URI
             )
-        
+
         analysis_service = AnalysisService(db_manager, of_client)
         bot_handlers = BotHandlers(db_manager, analysis_service)
-        
+
         # Cria e configura a aplicação
         application = Application.builder() \
             .token(Config.BOT_TOKEN) \
             .post_init(post_init) \
             .build()
-        
+
         setup_handlers(application, bot_handlers)
-        
-        logger.info("Bot iniciado. Pressione Ctrl+C para sair.")
+
+        logger.info("🤖 Bot iniciado. Pressione Ctrl+C para sair.")
         application.run_polling()
-        
-    except Exception as e:
-        logger.exception("Falha crítica na inicialização")
+
+    except KeyboardInterrupt:
+        logger.info("⚠️ Bot finalizado pelo usuário (Ctrl+C)")
+    except Exception:
+        logger.exception("💥 Falha crítica na inicialização")
         raise
 
 if __name__ == "__main__":

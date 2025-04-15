@@ -6,25 +6,42 @@ class BankType(Enum):
     ITAU = 'Itaú'
     BRADESCO = 'Bradesco'
     SANTANDER = 'Santander'
+    NUBANK = 'Nubank'
+    C6 = 'C6 Bank'
+    INTER = 'Banco Inter'
+    
+def validate_bank_statement(file_path: Path) -> BankType:
+    file_path = Path(file_path)
 
-def validate_bank_statement(file_path: str) -> BankType:
-    """Valida e identifica o tipo de extrato bancário"""
-    if not Path(file_path).exists():
+    if not file_path.exists():
         raise ValueError("Arquivo não encontrado")
-    
-    # Verifica extensão
-    if not file_path.lower().endswith(('.csv', '.xlsx')):
+
+    if file_path.suffix.lower() not in ['.csv', '.xlsx']:
         raise ValueError("Formato inválido. Use CSV ou XLSX")
-    
-    # Detecta o banco pelo conteúdo
+
     try:
-        df = pd.read_csv(file_path, nrows=5)
-        
-        if 'Itaú' in df.columns[0]:
-            return BankType.ITAU
-        elif 'BRADESCO' in df.columns[0]:
-            return BankType.BRADESCO
+        if file_path.suffix.lower() == '.csv':
+            df = pd.read_csv(file_path, nrows=5, encoding='utf-8', sep=None, engine='python')
         else:
-            raise ValueError("Banco não suportado")
+            df = pd.read_excel(file_path, nrows=5)
+
+        cols = set(df.columns)
+
+        # Detecção por colunas específicas
+        if 'Itaú' in df.columns[0] or 'ITAU' in df.columns[0].upper():
+            return BankType.ITAU
+        elif 'BRADESCO' in df.columns[0].upper():
+            return BankType.BRADESCO
+        elif 'SANTANDER' in df.columns[0].upper():
+            return BankType.SANTANDER
+        elif {'Data', 'Valor', 'Identificador', 'Descrição'}.issubset(cols):
+            return BankType.NUBANK
+        elif any('C6' in col.upper() for col in df.columns):
+            return BankType.C6
+        elif any('INTER' in col.upper() for col in df.columns):
+            return BankType.INTER
+        else:
+            raise ValueError("Banco não suportado ou não identificado")
+
     except Exception as e:
         raise ValueError(f"Não foi possível identificar o banco: {str(e)}")

@@ -3,76 +3,136 @@ import pandas as pd
 from abc import ABC, abstractmethod
 from typing import List, Dict
 import logging
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+
 class BankType(Enum):
-    ITAU = 'itau'
-    BRADESCO = 'bradesco'
-    SANTANDER = 'santander'
+    ITAU = 'Itaú'
+    BRADESCO = 'Bradesco'
+    SANTANDER = 'Santander'
+    NUBANK = 'Nubank'
+    C6 = 'C6 Bank'
+    INTER = 'Banco Inter'
+
 
 class BankParser(ABC):
     @abstractmethod
     def parse(self, file_path: str) -> List[Dict]:
         pass
 
+
+def clean_amount(value) -> float:
+    try:
+        if isinstance(value, str):
+            value = value.replace('.', '').replace(',', '.')
+        return float(value)
+    except Exception:
+        return 0.0
+
+
 class ItauParser(BankParser):
     def parse(self, file_path: str) -> List[Dict]:
         try:
             df = pd.read_csv(file_path, encoding='iso-8859-1')
-            
-            # Mapeamento de colunas padrão Itaú
-            transactions = []
-            for _, row in df.iterrows():
-                transactions.append({
+            return [
+                {
                     'date': row['Data'],
                     'description': row['Histórico'],
-                    'amount': float(row['Valor'].replace('.', '').replace(',', '.')),
+                    'amount': clean_amount(row['Valor']),
                     'bank_type': 'itau'
-                })
-            return transactions
-            
+                } for _, row in df.iterrows()
+            ]
         except Exception as e:
-            logger.error(f"Erro ao parsear arquivo Itaú: {str(e)}")
+            logger.error(f"[Itaú] Erro ao parsear arquivo: {str(e)}")
             raise
+
 
 class BradescoParser(BankParser):
     def parse(self, file_path: str) -> List[Dict]:
         try:
-            df = pd.read_excel(file_path)  # Bradesco geralmente usa Excel
-            
-            transactions = []
-            for _, row in df.iterrows():
-                transactions.append({
+            df = pd.read_excel(file_path)
+            return [
+                {
                     'date': row['Data'],
                     'description': row['Descrição'],
-                    'amount': float(row['Valor']),
+                    'amount': clean_amount(row['Valor']),
                     'bank_type': 'bradesco'
-                })
-            return transactions
-            
+                } for _, row in df.iterrows()
+            ]
         except Exception as e:
-            logger.error(f"Erro ao parsear arquivo Bradesco: {str(e)}")
+            logger.error(f"[Bradesco] Erro ao parsear arquivo: {str(e)}")
             raise
+
 
 class SantanderParser(BankParser):
     def parse(self, file_path: str) -> List[Dict]:
         try:
             df = pd.read_csv(file_path, sep=';', encoding='utf-8')
-            
-            transactions = []
-            for _, row in df.iterrows():
-                transactions.append({
+            return [
+                {
                     'date': row['Data Operação'],
                     'description': row['Descrição'],
-                    'amount': float(row['Valor'].replace(',', '.')),
+                    'amount': clean_amount(row['Valor']),
                     'bank_type': 'santander'
-                })
-            return transactions
-            
+                } for _, row in df.iterrows()
+            ]
         except Exception as e:
-            logger.error(f"Erro ao parsear arquivo Santander: {str(e)}")
+            logger.error(f"[Santander] Erro ao parsear arquivo: {str(e)}")
             raise
+
+
+class NubankParser(BankParser):
+    def parse(self, file_path: str) -> List[Dict]:
+        try:
+            df = pd.read_csv(file_path)
+            return [
+                {
+                    'date': row['Data'],
+                    'description': row['Descrição'],
+                    'amount': clean_amount(row['Valor']),
+                    'bank_type': 'nubank'
+                } for _, row in df.iterrows()
+            ]
+        except Exception as e:
+            logger.error(f"[Nubank] Erro ao parsear arquivo: {str(e)}")
+            raise
+
+
+class C6Parser(BankParser):
+    def parse(self, file_path: str) -> List[Dict]:
+        try:
+            df = pd.read_csv(file_path, sep=';', encoding='utf-8')
+            return [
+                {
+                    'date': row.get('Data', ''),
+                    'description': row.get('Descrição', ''),
+                    'amount': clean_amount(row.get('Valor', 0)),
+                    'bank_type': 'c6'
+                } for _, row in df.iterrows()
+            ]
+        except Exception as e:
+            logger.error(f"[C6 Bank] Erro ao parsear arquivo: {str(e)}")
+            raise
+
+
+class InterParser(BankParser):
+    def parse(self, file_path: str) -> List[Dict]:
+        try:
+            df = pd.read_csv(file_path, sep=';', encoding='utf-8')
+            return [
+                {
+                    'date': row.get('Data', ''),
+                    'description': row.get('Descrição', ''),
+                    'amount': clean_amount(row.get('Valor', 0)),
+                    'bank_type': 'inter'
+                } for _, row in df.iterrows()
+            ]
+        except Exception as e:
+            logger.error(f"[Banco Inter] Erro ao parsear arquivo: {str(e)}")
+            raise
+
 
 class BankParserFactory:
     @staticmethod
@@ -80,6 +140,12 @@ class BankParserFactory:
         parsers = {
             BankType.ITAU: ItauParser(),
             BankType.BRADESCO: BradescoParser(),
-            BankType.SANTANDER: SantanderParser()
+            BankType.SANTANDER: SantanderParser(),
+            BankType.NUBANK: NubankParser(),
+            BankType.C6: C6Parser(),
+            BankType.INTER: InterParser()
         }
-        return parsers[bank_type]
+        parser = parsers.get(bank_type)
+        if not parser:
+            raise ValueError(f"Parser não disponível para o banco: {bank_type}")
+        return parser

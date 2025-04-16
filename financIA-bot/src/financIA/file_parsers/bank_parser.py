@@ -32,10 +32,21 @@ def clean_amount(value) -> float:
         return 0.0
 
 
+def load_csv(file_path: str, sep: str = ',', fallback_encoding: str = 'iso-8859-1') -> pd.DataFrame:
+    try:
+        return pd.read_csv(file_path, sep=sep, encoding='utf-8', engine='python')
+    except UnicodeDecodeError:
+        return pd.read_csv(file_path, sep=sep, encoding=fallback_encoding, engine='python')
+
+
 class ItauParser(BankParser):
     def parse(self, file_path: str) -> List[Dict]:
         try:
-            df = pd.read_csv(file_path, encoding='iso-8859-1')
+            df = load_csv(file_path)
+            required_columns = {'Data', 'Histórico', 'Valor'}
+            if not required_columns.issubset(df.columns):
+                raise ValueError(f"[Itaú] Colunas esperadas: {required_columns}, encontradas: {df.columns.tolist()}")
+            logger.info(f"[Itaú] Colunas detectadas: {df.columns.tolist()}")
             return [
                 {
                     'date': row['Data'],
@@ -52,7 +63,11 @@ class ItauParser(BankParser):
 class BradescoParser(BankParser):
     def parse(self, file_path: str) -> List[Dict]:
         try:
-            df = pd.read_excel(file_path)
+            df = pd.read_excel(file_path, engine='openpyxl')
+            required_columns = {'Data', 'Descrição', 'Valor'}
+            if not required_columns.issubset(df.columns):
+                raise ValueError(f"[Bradesco] Colunas esperadas: {required_columns}, encontradas: {df.columns.tolist()}")
+            logger.info(f"[Bradesco] Colunas detectadas: {df.columns.tolist()}")
             return [
                 {
                     'date': row['Data'],
@@ -69,7 +84,11 @@ class BradescoParser(BankParser):
 class SantanderParser(BankParser):
     def parse(self, file_path: str) -> List[Dict]:
         try:
-            df = pd.read_csv(file_path, sep=';', encoding='utf-8')
+            df = load_csv(file_path, sep=';')
+            required_columns = {'Data Operação', 'Descrição', 'Valor'}
+            if not required_columns.issubset(df.columns):
+                raise ValueError(f"[Santander] Colunas esperadas: {required_columns}, encontradas: {df.columns.tolist()}")
+            logger.info(f"[Santander] Colunas detectadas: {df.columns.tolist()}")
             return [
                 {
                     'date': row['Data Operação'],
@@ -86,7 +105,11 @@ class SantanderParser(BankParser):
 class NubankParser(BankParser):
     def parse(self, file_path: str) -> List[Dict]:
         try:
-            df = pd.read_csv(file_path)
+            df = load_csv(file_path)
+            required_columns = {'Data', 'Descrição', 'Valor'}
+            if not required_columns.issubset(df.columns):
+                raise ValueError(f"[Nubank] Colunas esperadas: {required_columns}, encontradas: {df.columns.tolist()}")
+            logger.info(f"[Nubank] Colunas detectadas: {df.columns.tolist()}")
             return [
                 {
                     'date': row['Data'],
@@ -103,7 +126,11 @@ class NubankParser(BankParser):
 class C6Parser(BankParser):
     def parse(self, file_path: str) -> List[Dict]:
         try:
-            df = pd.read_csv(file_path, sep=';', encoding='utf-8')
+            df = load_csv(file_path, sep=';')
+            required_columns = {'Data', 'Descrição', 'Valor'}
+            if not required_columns.issubset(df.columns):
+                raise ValueError(f"[C6] Colunas esperadas: {required_columns}, encontradas: {df.columns.tolist()}")
+            logger.info(f"[C6] Colunas detectadas: {df.columns.tolist()}")
             return [
                 {
                     'date': row.get('Data', ''),
@@ -120,7 +147,11 @@ class C6Parser(BankParser):
 class InterParser(BankParser):
     def parse(self, file_path: str) -> List[Dict]:
         try:
-            df = pd.read_csv(file_path, sep=';', encoding='utf-8')
+            df = load_csv(file_path, sep=';')
+            required_columns = {'Data', 'Descrição', 'Valor'}
+            if not required_columns.issubset(df.columns):
+                raise ValueError(f"[Inter] Colunas esperadas: {required_columns}, encontradas: {df.columns.tolist()}")
+            logger.info(f"[Inter] Colunas detectadas: {df.columns.tolist()}")
             return [
                 {
                     'date': row.get('Data', ''),

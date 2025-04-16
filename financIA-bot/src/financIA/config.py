@@ -6,13 +6,14 @@ load_dotenv()
 
 class Config:
     BASE_DIR = Path(__file__).parent.parent
-    DB_PATH = BASE_DIR / os.getenv("DATABASE_PATH", "data/processed/transactions.db")
+    DB_PATH = Path(__file__).resolve().parent.parent.parent / 'data' / 'processed' / 'transactions.db'
     BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
     OPEN_FINANCE_CLIENT_ID = os.getenv('OPEN_FINANCE_CLIENT_ID')
     OPEN_FINANCE_CLIENT_SECRET = os.getenv('OPEN_FINANCE_CLIENT_SECRET')
     OPEN_FINANCE_REDIRECT_URI = os.getenv('OPEN_FINANCE_REDIRECT_URI', 'https://seu.dominio/callback')
     UPLOADS_DIR = Path(__file__).parent.parent / "user_uploads"
     OPEN_FINANCE_TOKEN_URL = os.getenv('OPEN_FINANCE_TOKEN_URL', 'https://api.openfinance.example/oauth/token')
+    TWELVE_DATA_API_KEY = os.getenv("TWELVE_DATA_API_KEY", "49ac59d6a8514448a96622339744bb32")
     
     @classmethod
     def ensure_dirs(cls):

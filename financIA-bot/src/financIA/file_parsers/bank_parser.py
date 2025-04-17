@@ -1,12 +1,10 @@
-from enum import Enum
-import pandas as pd
 from abc import ABC, abstractmethod
 from typing import List, Dict
 import logging
 from pathlib import Path
+import pandas as pd
 
-logger = logging.getLogger(__name__)
-
+from enum import Enum
 
 class BankType(Enum):
     ITAU = 'Itaú'
@@ -16,12 +14,12 @@ class BankType(Enum):
     C6 = 'C6 Bank'
     INTER = 'Banco Inter'
 
+logger = logging.getLogger(__name__)
 
 class BankParser(ABC):
     @abstractmethod
     def parse(self, file_path: str) -> List[Dict]:
         pass
-
 
 def clean_amount(value) -> float:
     try:
@@ -31,13 +29,11 @@ def clean_amount(value) -> float:
     except Exception:
         return 0.0
 
-
 def load_csv(file_path: str, sep: str = ',', fallback_encoding: str = 'iso-8859-1') -> pd.DataFrame:
     try:
         return pd.read_csv(file_path, sep=sep, encoding='utf-8', engine='python')
     except UnicodeDecodeError:
         return pd.read_csv(file_path, sep=sep, encoding=fallback_encoding, engine='python')
-
 
 class ItauParser(BankParser):
     def parse(self, file_path: str) -> List[Dict]:
@@ -59,7 +55,6 @@ class ItauParser(BankParser):
             logger.error(f"[Itaú] Erro ao parsear arquivo: {str(e)}")
             raise
 
-
 class BradescoParser(BankParser):
     def parse(self, file_path: str) -> List[Dict]:
         try:
@@ -79,7 +74,6 @@ class BradescoParser(BankParser):
         except Exception as e:
             logger.error(f"[Bradesco] Erro ao parsear arquivo: {str(e)}")
             raise
-
 
 class SantanderParser(BankParser):
     def parse(self, file_path: str) -> List[Dict]:
@@ -101,11 +95,10 @@ class SantanderParser(BankParser):
             logger.error(f"[Santander] Erro ao parsear arquivo: {str(e)}")
             raise
 
-
 class NubankParser(BankParser):
     def parse(self, file_path: str) -> List[Dict]:
         try:
-            df = load_csv(file_path)
+            df = load_csv(file_path, sep=';')
             required_columns = {'Data', 'Descrição', 'Valor'}
             if not required_columns.issubset(df.columns):
                 raise ValueError(f"[Nubank] Colunas esperadas: {required_columns}, encontradas: {df.columns.tolist()}")
@@ -121,7 +114,6 @@ class NubankParser(BankParser):
         except Exception as e:
             logger.error(f"[Nubank] Erro ao parsear arquivo: {str(e)}")
             raise
-
 
 class C6Parser(BankParser):
     def parse(self, file_path: str) -> List[Dict]:
@@ -143,7 +135,6 @@ class C6Parser(BankParser):
             logger.error(f"[C6 Bank] Erro ao parsear arquivo: {str(e)}")
             raise
 
-
 class InterParser(BankParser):
     def parse(self, file_path: str) -> List[Dict]:
         try:
@@ -164,10 +155,17 @@ class InterParser(BankParser):
             logger.error(f"[Banco Inter] Erro ao parsear arquivo: {str(e)}")
             raise
 
-
 class BankParserFactory:
     @staticmethod
     def get_parser(bank_type: BankType) -> BankParser:
+        logger.debug(f"[DEBUG] Tipo de banco recebido: {bank_type} ({type(bank_type)})")
+
+        if isinstance(bank_type, str):
+            try:
+                bank_type = BankType(bank_type)
+            except ValueError:
+                raise ValueError(f"Tipo de banco desconhecido (string): {bank_type}")
+
         parsers = {
             BankType.ITAU: ItauParser(),
             BankType.BRADESCO: BradescoParser(),

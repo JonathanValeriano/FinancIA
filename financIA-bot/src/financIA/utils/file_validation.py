@@ -34,7 +34,7 @@ def validate_bank_statement(file_path: Path) -> BankType:
             return BankType.BRADESCO
         elif 'SANTANDER' in df.columns[0].upper():
             return BankType.SANTANDER
-        elif {'Data', 'Valor', 'Identificador', 'Descrição'}.issubset(cols):
+        elif {'Data', 'Valor', 'Descrição'}.issubset(cols):
             return BankType.NUBANK
         elif any('C6' in col.upper() for col in df.columns):
             return BankType.C6

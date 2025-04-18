@@ -1,15 +1,8 @@
-from enum import Enum
 import pandas as pd
 from pathlib import Path
+from src.financIA.enums.bank_type import BankType
 
-class BankType(Enum):
-    ITAU = 'Itaú'
-    BRADESCO = 'Bradesco'
-    SANTANDER = 'Santander'
-    NUBANK = 'Nubank'
-    C6 = 'C6 Bank'
-    INTER = 'Banco Inter'
-    
+
 def validate_bank_statement(file_path: Path) -> BankType:
     file_path = Path(file_path)
 

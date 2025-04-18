@@ -159,3 +159,14 @@ class DatabaseManager:
         except Exception as e:
             logger.error(f"Erro ao deletar ativo {asset_name} do usuário {user_id}: {e}")
             raise
+        
+    def get_balance(self, user_id: int) -> float:
+        """
+        Calcula o saldo total baseado nas transações do usuário.
+        """
+        with self._get_connection() as conn:
+            cursor = conn.execute("""
+                SELECT SUM(amount) FROM transactions WHERE user_id = ?
+            """, (user_id,))
+            result = cursor.fetchone()
+            return result[0] if result[0] is not None else 0.0

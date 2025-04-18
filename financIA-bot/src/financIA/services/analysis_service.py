@@ -1,7 +1,8 @@
 from ..integrations.open_finance import OpenFinanceIntegration
 from ..core.categorizer import SmartCategorizer
-from ..file_parsers.bank_parser import BankParserFactory, BankType
+from ..file_parsers.bank_parser import BankParserFactory
 from typing import Union, List, Dict
+from src.financIA.file_parsers.bank_parser import BankType
 import logging
 
 logger = logging.getLogger(__name__)

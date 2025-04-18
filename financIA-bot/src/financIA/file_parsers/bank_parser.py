@@ -3,16 +3,8 @@ from typing import List, Dict
 import logging
 from pathlib import Path
 import pandas as pd
+from src.financIA.enums.bank_type import BankType
 
-from enum import Enum
-
-class BankType(Enum):
-    ITAU = 'Itaú'
-    BRADESCO = 'Bradesco'
-    SANTANDER = 'Santander'
-    NUBANK = 'Nubank'
-    C6 = 'C6 Bank'
-    INTER = 'Banco Inter'
 
 logger = logging.getLogger(__name__)
 
@@ -97,23 +89,25 @@ class SantanderParser(BankParser):
 
 class NubankParser(BankParser):
     def parse(self, file_path: str) -> List[Dict]:
-        try:
-            df = load_csv(file_path, sep=';')
-            required_columns = {'Data', 'Descrição', 'Valor'}
-            if not required_columns.issubset(df.columns):
-                raise ValueError(f"[Nubank] Colunas esperadas: {required_columns}, encontradas: {df.columns.tolist()}")
-            logger.info(f"[Nubank] Colunas detectadas: {df.columns.tolist()}")
-            return [
-                {
-                    'date': row['Data'],
-                    'description': row['Descrição'],
-                    'amount': clean_amount(row['Valor']),
-                    'bank_type': 'nubank'
-                } for _, row in df.iterrows()
-            ]
-        except Exception as e:
-            logger.error(f"[Nubank] Erro ao parsear arquivo: {str(e)}")
-            raise
+        for sep in [';', ',']:
+            try:
+                df = load_csv(file_path, sep=sep)
+                required_columns = {'Data', 'Descrição', 'Valor'}
+                if required_columns.issubset(set(df.columns)):
+                    logger.info(f"[Nubank] Colunas detectadas com sep='{sep}': {df.columns.tolist()}")
+                    return [
+                        {
+                            'date': row['Data'],
+                            'description': row['Descrição'],
+                            'amount': clean_amount(row['Valor']),
+                            'bank_type': 'nubank'
+                        } for _, row in df.iterrows()
+                    ]
+            except Exception as e:
+                logger.warning(f"[Nubank] Tentativa com separador '{sep}' falhou: {e}")
+        
+        raise ValueError(f"[Nubank] Colunas esperadas: {{'Valor', 'Descrição', 'Data'}}, mas não foram encontradas.")
+
 
 class C6Parser(BankParser):
     def parse(self, file_path: str) -> List[Dict]:

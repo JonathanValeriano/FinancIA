@@ -7,6 +7,7 @@ from typing import Dict, Any
 import pandas as pd
 import requests
 
+from  src.financIA.enums.bank_type import BankType
 from ..utils.asset_validation import validate_asset_symbol
 from ..core.database import DatabaseManager
 from ..services.analysis_service import AnalysisService

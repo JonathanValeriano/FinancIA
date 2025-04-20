@@ -1,6 +1,7 @@
 import sqlite3
 from pathlib import Path
 import logging
+from typing import List, Dict
 from src.financIA.config import Config
 
 logger = logging.getLogger(__name__)
@@ -170,3 +171,31 @@ class DatabaseManager:
             """, (user_id,))
             result = cursor.fetchone()
             return result[0] if result[0] is not None else 0.0
+    def get_statement(self, user_id: int, limit: int = 10) -> list[dict]:
+        with self._get_connection() as conn:
+            cursor = conn.execute("""
+                SELECT date, description, amount, bank_type
+                FROM transactions
+                WHERE user_id = ?
+                ORDER BY date DESC
+                LIMIT ?
+            """, (user_id, limit))
+            return [dict(row) for row in cursor.fetchall()]
+    def save_transaction(self, user_id: int, date: str, description: str, amount: float, category: str, bank_type: str):
+        with self._get_connection() as conn:
+            conn.execute("""
+                INSERT INTO transactions (date, description, amount, category, user_id)
+                VALUES (?, ?, ?, ?, ?)
+            """, (date, description, amount, category, user_id))
+            conn.commit()
+            
+    def get_last_transactions(self, user_id: int, limit: int = 5) -> List[Dict]:
+        with self._get_connection() as conn:
+            cursor = conn.execute("""
+                SELECT date, description, amount, category
+                FROM transactions
+                WHERE user_id = ?
+                ORDER BY date DESC
+                LIMIT ?
+            """, (user_id, limit))
+            return [dict(row) for row in cursor.fetchall()]

@@ -32,27 +32,22 @@ class BotHandlers:
         try:
             user = update.effective_user
             keyboard = [
-                [InlineKeyboardButton("📊 Saldo", callback_data='balance'),
-                 InlineKeyboardButton("📋 Extrato", callback_data='statement')],
-                [InlineKeyboardButton("🔗 Conectar Open Finance", callback_data='connect_of'),
-                 InlineKeyboardButton("🔄 Sincronizar", callback_data='sync_of')],
-                [InlineKeyboardButton("📤 Enviar Extrato", callback_data='upload_file')],
-                [InlineKeyboardButton("➕ Incluir Ativo", callback_data='add_asset'),
-                 InlineKeyboardButton("📈 Ver Meus Ativos", callback_data='list_assets')]
+                [InlineKeyboardButton("💸 Controle Financeiro", callback_data='controle_menu')],
+                [InlineKeyboardButton("📈 Investimentos", callback_data='investimentos_menu')]
             ]
-
-            await update.message.reply_text(
+            text = (
                 f"👋 Olá {user.first_name}! Eu sou seu assistente financeiro.\n\n"
-                "Você pode:\n"
-                "- Ver seu saldo e extrato\n"
-                "- Conectar bancos via Open Finance\n"
-                "- Enviar extratos bancários\n"
-                "- Incluir e visualizar seus ativos (ações, FIIs, etc.)",
-                reply_markup=InlineKeyboardMarkup(keyboard)
+                "Escolha abaixo o que deseja acessar:"
             )
+
+            if update.message:
+                await update.message.reply_text(text, reply_markup=InlineKeyboardMarkup(keyboard))
+            elif update.callback_query:
+                await update.callback_query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard))
         except Exception as e:
             logger.error(f"Erro no comando start: {str(e)}", exc_info=True)
-            await self.send_error_message(update, "Erro ao exibir menu principal")
+            await self.send_error_message(update, "Erro ao exibir menu principal.")
+
 
     async def handle_message(self, update: Update, context: CallbackContext) -> None:
         if context.user_data.get('awaiting_of_token'):
@@ -200,8 +195,75 @@ class BotHandlers:
             f"🗑️ Ativo '{asset_name}' removido com sucesso.",
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton("🔄 Atualizar lista", callback_data="list_assets")],
-                [InlineKeyboardButton("➕ Adicionar ativo", callback_data="add_asset")]
+                [InlineKeyboardButton("➕ Adicionar ativo", callback_data="add_asset")],
+                [InlineKeyboardButton("🔙 Voltar", callback_data='back_to_menu')]
             ])
+        )
+        
+    async def handle_investimentos_menu(self, update: Update, context: CallbackContext) -> None:
+        try:
+            if update.callback_query:
+                await update.callback_query.answer()
+                keyboard = [
+                    [InlineKeyboardButton("➕ Incluir Ativo", callback_data='add_asset')],
+                    [InlineKeyboardButton("📈 Ver Meus Ativos", callback_data='list_assets')],
+                    [InlineKeyboardButton("📢 Acompanhar meus investimentos", callback_data='track_investments')],
+                    [InlineKeyboardButton("🔙 Voltar", callback_data='back_to_menu')]
+                ]
+                await update.callback_query.edit_message_text("📈 Menu de Investimentos:", reply_markup=InlineKeyboardMarkup(keyboard))
+        except Exception as e:
+            logger.error(f"Erro ao abrir menu de investimentos: {str(e)}", exc_info=True)
+            await self.send_error_message(update, "Erro ao abrir o menu de investimentos.")
+
+    async def handle_controle_menu(self, update: Update, context: CallbackContext) -> None:
+        try:
+            if update.callback_query:
+                await update.callback_query.answer()
+                keyboard = [
+                    [InlineKeyboardButton("📊 Saldo", callback_data='balance')],
+                    [InlineKeyboardButton("📋 Extrato", callback_data='statement')],
+                    [InlineKeyboardButton("📤 Enviar Extrato", callback_data='upload_file')],
+                    [InlineKeyboardButton("🔙 Voltar", callback_data='back_to_menu')]
+                ]
+                await update.callback_query.edit_message_text("💸 Menu de Controle Financeiro:", reply_markup=InlineKeyboardMarkup(keyboard))
+        except Exception as e:
+            logger.error(f"Erro ao abrir menu de controle financeiro: {str(e)}", exc_info=True)
+            await self.send_error_message(update, "Erro ao abrir o menu de controle financeiro.")
+
+    async def handle_acompanhar_ativos(self, update: Update, context: CallbackContext) -> None:
+        try:
+            query = update.callback_query
+            await query.answer()
+            await query.edit_message_text("📊 Resumo dos ativos ainda está em desenvolvimento.\nAguarde novidades!", reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("🔙 Voltar", callback_data='investimentos_menu')]
+            ]))
+        except Exception as e:
+            logger.error(f"Erro em acompanhar ativos: {str(e)}", exc_info=True)
+            await self.send_error_message(update, "Erro ao abrir acompanhamento de ativos.")
+        async def handle_track_investments(self, update: Update, context: CallbackContext) -> None:
+            query = update.callback_query
+            await query.answer()
+
+        user_id = update.effective_user.id
+        assets = self.db.get_user_assets(user_id)
+
+        if not assets:
+            await query.edit_message_text("❌ Você ainda não cadastrou ativos.")
+            return
+
+        tickers = [asset['name'] for asset in assets]
+        await query.edit_message_text("🔍 Buscando notícias sobre seus ativos...")
+
+        summaries = []
+        for ticker in tickers:
+            resumo = self.analysis.get_news_summary(ticker)
+            summaries.append(f"*📈 {ticker}*\n{resumo}")
+
+        response = "\n\n".join(summaries)
+        await context.bot.send_message(
+            chat_id=query.message.chat_id,
+            text=response,
+            parse_mode='Markdown'
         )
         
     async def handle_balance(self, update: Update, context: CallbackContext) -> None:
@@ -217,32 +279,64 @@ class BotHandlers:
                 f"💰 Seu saldo atual é: R$ {balance:.2f}",
                 reply_markup=InlineKeyboardMarkup([
                     [InlineKeyboardButton("🔄 Atualizar", callback_data='sync_balance')],
-                    [InlineKeyboardButton("📋 Ver Extrato", callback_data='statement')]
+                    [InlineKeyboardButton("📋 Ver Extrato", callback_data='statement')],
+                    [InlineKeyboardButton("🔙 Voltar", callback_data='back_to_menu')]
                 ])
             )
         except Exception as e:
             logger.error(f"Erro ao obter saldo: {str(e)}", exc_info=True)
             await update.message.reply_text("❌ Ocorreu um erro ao obter o saldo. Tente novamente mais tarde.")
+    
     async def handle_statement(self, update: Update, context: CallbackContext) -> None:
+        """Exibe últimas transações do usuário"""
         try:
             user_id = update.effective_user.id
-            statement = self.db.get_statement(user_id)  # Supondo que o método get_statement exista no seu DB
+            transactions = self.db.get_last_transactions(user_id, limit=5)
 
-            if not statement:
-                await update.message.reply_text("⚠️ Não foi possível recuperar o extrato.")
-                return
+            if not transactions:
+                response = "📋 Nenhuma transação encontrada."
+            else:
+                response = "📋 Últimas transações:"
+                for t in transactions:
+                    response += f"• {t['date']}: {t['description']} - R$ {t['amount']:.2f} ({t['category']})"
 
-            # Exemplo de como exibir o extrato
-            response = "📋 Seu extrato bancário:\n\n"
-            for transaction in statement:
-                response += f"• {transaction['description']} - R$ {transaction['amount']:.2f}\n"
+            keyboard = [[InlineKeyboardButton("🔙 Voltar", callback_data='back_to_menu')]]
+            reply_markup = InlineKeyboardMarkup(keyboard)
 
-            await update.message.reply_text(response)
+            if update.message:
+                await update.message.reply_text(response, reply_markup=reply_markup)
+            elif update.callback_query:
+                await update.callback_query.edit_message_text(response, reply_markup=reply_markup)
 
         except Exception as e:
             logger.error(f"Erro ao obter extrato: {str(e)}", exc_info=True)
-            await update.message.reply_text("❌ Ocorreu um erro ao obter seu extrato. Tente novamente mais tarde.")
+            if update.message:
+                await update.message.reply_text("❌ Ocorreu um erro ao obter seu extrato. Tente novamente mais tarde.")
+            elif update.callback_query:
+                await update.callback_query.edit_message_text("❌ Ocorreu um erro ao obter seu extrato.")
+        try:
+            user_id = update.effective_user.id
+            transactions = self.db.get_last_transactions(user_id, limit=5)
 
+            if not transactions:
+                text = "📭 Nenhuma transação encontrada."
+            else:
+                text = "📋 Últimas transações:\n"
+                for t in transactions:
+                    text += f"\n• {t['date']}: {t['description']} - R$ {t['amount']:.2f} ({t.get('category', '-')})"
+
+            if update.callback_query:
+                await update.callback_query.answer()
+                await update.callback_query.message.reply_text(text)
+            else:
+                await update.message.reply_text(text)
+
+        except Exception as e:
+            logger.error(f"Erro ao obter extrato: {e}", exc_info=True)
+            if update.callback_query:
+                await update.callback_query.message.reply_text("❌ Ocorreu um erro ao obter seu extrato. Tente novamente mais tarde.")
+            else:
+                await update.message.reply_text("❌ Ocorreu um erro ao obter seu extrato. Tente novamente mais tarde.")
 
     # --- Open Finance Handlers ---
 
@@ -262,7 +356,9 @@ class BotHandlers:
         await query.edit_message_text(
             instructions,
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("❌ Cancelar", callback_data='cancel_of')]
+                [InlineKeyboardButton("❌ Cancelar", callback_data='cancel_of')],
+                [InlineKeyboardButton("🔙 Voltar", callback_data='back_to_menu')]
+
             ])
         )
 
@@ -349,7 +445,8 @@ class BotHandlers:
         await query.edit_message_text(
             instructions,
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("❌ Cancelar", callback_data='cancel_upload')]
+                [InlineKeyboardButton("❌ Cancelar", callback_data='cancel_upload')],
+                [InlineKeyboardButton("🔙 Voltar", callback_data='back_to_menu')]
             ])
         )
 
@@ -385,7 +482,7 @@ class BotHandlers:
             file = await document.get_file()
             await file.download_to_drive(file_path)
             bank_type = validate_bank_statement(file_path)
-            transactions = self.analysis.process_file(file_path, bank_type)
+            transactions = self.analysis.process_file(file_path, bank_type, user.id)
 
             await update.message.reply_text(
                 f"✅ Extrato processado com sucesso!\n\n"
@@ -393,7 +490,8 @@ class BotHandlers:
                 f"• Transações importadas: {len(transactions)}\n"
                 f"• Saldo atualizado: R$ {self.db.get_balance(user.id):.2f}",
                 reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("📋 Ver Extrato", callback_data='statement')]
+                    [InlineKeyboardButton("📋 Ver Extrato", callback_data='statement')],
+                    [InlineKeyboardButton("🔙 Voltar", callback_data='back_to_menu')]
                 ])
             )
 
@@ -406,6 +504,19 @@ class BotHandlers:
             context.user_data.pop('awaiting_file_upload', None)
 
     # --- Helper Methods ---
+
+
+    async def handle_back_to_menu(self, update: Update, context: CallbackContext) -> None:
+        """Retorna ao menu principal (mesmo do /start)"""
+        try:
+            if update.callback_query:
+                await update.callback_query.answer()
+                await self.start(update, context)
+            else:
+                await self.start(update, context)
+        except Exception as e:
+            logger.error(f"Erro ao voltar ao menu: {str(e)}", exc_info=True)
+            await self.send_error_message(update, "Erro ao voltar ao menu principal.")
 
     def _exchange_token(self, auth_code: str) -> Dict[str, Any]:
         response = requests.post(

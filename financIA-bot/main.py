@@ -11,7 +11,6 @@ from telegram.ext import (
 from src.financIA.core.database import DatabaseManager
 from src.financIA.bot.handlers import BotHandlers
 from src.financIA.config import Config
-print("🔍 NEWS_API_KEY:", Config.NEWS_API_KEY)
 from src.financIA.integrations.open_finance import OpenFinanceIntegration
 from src.financIA.services.analysis_service import AnalysisService
 
@@ -67,7 +66,7 @@ def setup_handlers(application: Application, handlers: BotHandlers) -> None:
         # CallbackQueryHandler(handlers.handle_acompanhar_ativos, pattern='^acompanhar_ativos$'),
         # CallbackQueryHandler(handlers.handle_track_investments, pattern='^track_investments$'),
         CallbackQueryHandler(handlers.handle_acompanhar_ativos, pattern='^track_investments$'),
-
+        CallbackQueryHandler(handlers.handle_back_to_investments, pattern='^back_to_investments$')
 
     ]
 
@@ -79,7 +78,9 @@ def setup_handlers(application: Application, handlers: BotHandlers) -> None:
 
     # Adiciona todos os handlers de uma vez
     application.add_handlers(command_handlers + callback_handlers + message_handlers)
-    application.add_handler(CallbackQueryHandler(handlers.handle_delete_asset, pattern=r"^delete_asset:"))
+    #application.add_handler(CallbackQueryHandler(handlers.handle_delete_asset, pattern=r"^delete_asset:"))
+    application.add_handler(CallbackQueryHandler(handlers.handle_list_assets_for_removal, pattern='^remove_asset_menu$'))
+    application.add_handler(CallbackQueryHandler(handlers.handle_remove_asset, pattern='^remove_asset:'))
 
 
 

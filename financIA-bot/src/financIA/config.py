@@ -15,6 +15,7 @@ class Config:
     OPEN_FINANCE_TOKEN_URL = os.getenv('OPEN_FINANCE_TOKEN_URL', 'https://api.openfinance.example/oauth/token')
     TWELVE_DATA_API_KEY = os.getenv("TWELVE_DATA_API_KEY", "49ac59d6a8514448a96622339744bb32")
     NEWS_API_KEY = os.getenv("NEWS_API_KEY")
+    GNEWS_API_KEY = os.getenv("GNEWS_API_KEY", "")
 
     
     @classmethod

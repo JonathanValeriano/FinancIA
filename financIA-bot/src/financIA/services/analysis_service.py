@@ -54,25 +54,50 @@ class AnalysisService:
 
     def get_news_summary(self, ticker: str) -> str:
         """
-        Busca notícias recentes sobre o ativo usando a API NewsData.io e retorna um resumo.
+        Busca notícias recentes sobre o ativo usando a API GNews e retorna um resumo.
         """
         try:
-            url = f"https://newsdata.io/api/1/news?apikey={self.config.NEWS_API_KEY}&q={ticker}&language=pt"
+            url = f"https://gnews.io/api/v4/search?q={ticker}&lang=pt&token={Config.GNEWS_API_KEY}"
             response = requests.get(url, timeout=10)
             response.raise_for_status()
             data = response.json()
 
-            articles = data.get("results", [])[:3]
+            articles = data.get("articles", [])[:3]
             if not articles:
                 return "🔎 Nenhuma notícia encontrada."
 
             summary = ""
             for article in articles:
                 title = article.get("title", "Sem título")
-                date = article.get("pubDate", "")[:10]
+                date = article.get("publishedAt", "")[:10]
                 summary += f"• {title} ({date})\n"
 
             return summary
         except Exception as e:
             logger.warning(f"[NOTÍCIAS] Falha ao buscar para {ticker}: {e}")
             return "⚠️ Não foi possível obter notícias no momento."
+
+    # def get_news_summary(self, ticker: str) -> str:
+    #     """
+    #     Busca notícias recentes sobre o ativo usando a API NewsData.io e retorna um resumo.
+    #     """
+    #     try:
+    #         url = f"https://newsdata.io/api/1/news?apikey={self.config.NEWS_API_KEY}&q={ticker}&language=pt"
+    #         response = requests.get(url, timeout=10)
+    #         response.raise_for_status()
+    #         data = response.json()
+
+    #         articles = data.get("results", [])[:3]
+    #         if not articles:
+    #             return "🔎 Nenhuma notícia encontrada."
+
+    #         summary = ""
+    #         for article in articles:
+    #             title = article.get("title", "Sem título")
+    #             date = article.get("pubDate", "")[:10]
+    #             summary += f"• {title} ({date})\n"
+
+    #         return summary
+    #     except Exception as e:
+    #         logger.warning(f"[NOTÍCIAS] Falha ao buscar para {ticker}: {e}")
+    #         return "⚠️ Não foi possível obter notícias no momento."

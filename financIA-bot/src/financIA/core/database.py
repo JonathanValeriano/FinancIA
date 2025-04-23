@@ -199,3 +199,15 @@ class DatabaseManager:
                 LIMIT ?
             """, (user_id, limit))
             return [dict(row) for row in cursor.fetchall()]
+
+    def delete_user_asset(self, user_id: int, asset_name: str) -> None:
+        try:
+            with self._get_connection() as conn:
+                conn.execute(
+                    "DELETE FROM assets WHERE user_id = ? AND name = ?",
+                    (user_id, asset_name)
+                )
+                conn.commit()
+        except Exception as e:
+            logger.error(f"[DB] Erro ao deletar ativo {asset_name} do usuário {user_id}: {e}")
+            raise

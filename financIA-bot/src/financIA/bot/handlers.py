@@ -6,6 +6,14 @@ import logging
 from typing import Dict, Any
 import pandas as pd
 import requests
+from src.financIA.utils.market_data import (
+    get_stock_price,
+    get_stock_indicators,
+    get_latest_news,
+    gerar_recomendacao,
+    resumo_dos_ativos
+)
+
 
 from  src.financIA.enums.bank_type import BankType
 from ..utils.asset_validation import validate_asset_symbol
@@ -155,51 +163,64 @@ class BotHandlers:
             await self.send_error_message(update, "Ocorreu um erro ao cancelar a adição.")
 
     async def handle_asset_list(self, update: Update, context: CallbackContext) -> None:
-        user_id = update.effective_user.id
-        assets = self.db.get_user_assets(user_id)
-
-        if not assets:
-            await update.callback_query.edit_message_text(
-                "📭 Você ainda não adicionou nenhum ativo.",
-                reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("➕ Adicionar ativo", callback_data="add_asset")],
-                    [InlineKeyboardButton("🔙 Voltar", callback_data="back_to_menu")]
-                ])
-            )
-            return
-
-        keyboard = []
-        for asset in assets:
-            keyboard.append([
-                InlineKeyboardButton(f"🗑️ {asset['name']}", callback_data=f"delete_asset:{asset['name']}")
-            ])
-
-        keyboard.append([InlineKeyboardButton("➕ Adicionar outro", callback_data='add_asset')])
-        keyboard.append([InlineKeyboardButton("🔙 Voltar", callback_data='back_to_menu')])
-
-        await update.callback_query.edit_message_text(
-            "📈 Seus ativos cadastrados:\nClique para excluir:",
-            reply_markup=InlineKeyboardMarkup(keyboard)
-        )
-
-    async def handle_delete_asset(self, update: Update, context: CallbackContext) -> None:
         query = update.callback_query
         await query.answer()
+        user_id = query.from_user.id
 
-        user_id = update.effective_user.id
-        asset_name = query.data.split(":")[1]
+        try:
+            assets = self.db.get_user_assets(user_id)
+            if not assets:
+                await query.edit_message_text("📭 Você ainda não adicionou nenhum ativo.")
+                return
 
-        self.db.delete_asset(user_id, asset_name)
+            manter, observar, vender = 0, 0, 0
+            response = "📈 Seus ativos acompanhados:\n\n"
 
-        await query.edit_message_text(
-            f"🗑️ Ativo '{asset_name}' removido com sucesso.",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("🔄 Atualizar lista", callback_data="list_assets")],
-                [InlineKeyboardButton("➕ Adicionar ativo", callback_data="add_asset")],
-                [InlineKeyboardButton("🔙 Voltar", callback_data='back_to_menu')]
-            ])
-        )
-        
+            for asset in assets:
+                symbol = asset['name']
+                indicadores = get_stock_indicators(symbol)
+                noticia = get_latest_news(symbol)
+                recomendacao = gerar_recomendacao(symbol, indicadores)
+
+                preco_cota = indicadores.get("Preço", "N/A")
+
+                if recomendacao == "✅ Manter":
+                    manter += 1
+                elif recomendacao == "⚠️ Observar":
+                    observar += 1
+                elif recomendacao == "🛑 Vender":
+                    vender += 1
+
+                response += (
+                    f"📊 {symbol}\n"
+                    f"├ 💹 Indicadores:\n"
+                    f"│   • Preço: R$ {preco_cota}\n"
+                    f"│   • P/L: {indicadores['P/L']}\n"
+                    f"│   • DY: {indicadores['DY']}\n"
+                    f"│   • ROE: {indicadores['ROE']}\n"
+                    f"├ 📈 Recomendação: {recomendacao}\n"
+                    f"└ 📰 Última notícia: {noticia}\n\n"
+                )
+
+            response += (
+                f"\n📌 Resumo geral:\n"
+                f"Sua carteira possui {len(assets)} ativos.\n"
+                f"Recomendações:\n ✅ Manter: {manter}\n ⚠️ Observar: {observar}\n 🛑 Vender: {vender}."
+            )
+
+            keyboard = [[InlineKeyboardButton("🔙 Voltar", callback_data='back_to_investments')]]
+
+            await query.edit_message_text(
+                text=response,
+                reply_markup=InlineKeyboardMarkup(keyboard),
+                parse_mode='Markdown'
+            )
+
+        except Exception as e:
+            logger.error(f"Erro ao listar ativos: {str(e)}", exc_info=True)
+            await query.edit_message_text("❌ Ocorreu um erro ao listar seus ativos.")
+
+                
     async def handle_investimentos_menu(self, update: Update, context: CallbackContext) -> None:
         try:
             if update.callback_query:
@@ -207,7 +228,8 @@ class BotHandlers:
                 keyboard = [
                     [InlineKeyboardButton("➕ Incluir Ativo", callback_data='add_asset')],
                     [InlineKeyboardButton("📈 Ver Meus Ativos", callback_data='list_assets')],
-                    [InlineKeyboardButton("📢 Acompanhar meus investimentos", callback_data='track_investments')],
+                    [InlineKeyboardButton("🗑️ Remover ativo", callback_data="remove_asset_menu")],
+                    # [InlineKeyboardButton("📢 Acompanhar meus investimentos", callback_data='track_investments')],
                     [InlineKeyboardButton("🔙 Voltar", callback_data='back_to_menu')]
                 ]
                 await update.callback_query.edit_message_text("📈 Menu de Investimentos:", reply_markup=InlineKeyboardMarkup(keyboard))
@@ -264,6 +286,77 @@ class BotHandlers:
             chat_id=query.message.chat_id,
             text=response,
             parse_mode='Markdown'
+        )
+        
+    async def handle_list_assets_for_removal(self, update: Update, context: CallbackContext) -> None:
+        query = update.callback_query
+        await query.answer()
+        user_id = query.from_user.id
+
+        try:
+            assets = self.db.get_user_assets(user_id)
+            if not assets:
+                await query.edit_message_text("📭 Você ainda não adicionou nenhum ativo.")
+                return
+
+            keyboard = []
+            for asset in assets:
+                keyboard.append([
+                    InlineKeyboardButton(
+                        f"❌ Remover {asset['name']}", callback_data=f"remove_asset:{asset['name']}"
+                    )
+                ])
+
+            keyboard.append([InlineKeyboardButton("🔙 Voltar", callback_data='back_to_investments')])
+
+            await query.edit_message_text(
+                "🗑️ Selecione um ativo para remover:",
+                reply_markup=InlineKeyboardMarkup(keyboard)
+            )
+
+        except Exception as e:
+            logger.error(f"Erro ao listar ativos para remoção: {str(e)}", exc_info=True)
+            await query.edit_message_text("❌ Ocorreu um erro ao listar os ativos.")
+
+        
+    async def handle_remove_asset(self, update: Update, context: CallbackContext) -> None:
+        query = update.callback_query
+        await query.answer()
+
+        try:
+            data = query.data
+            asset_name = data.split(":")[1].upper()
+            user_id = query.from_user.id
+
+            self.db.delete_user_asset(user_id, asset_name)
+
+            await query.edit_message_text(
+                f"✅ O ativo '{asset_name}' foi removido com sucesso.",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("📋 Ver Meus Ativos", callback_data='list_assets')],
+                    [InlineKeyboardButton("🗑️ Remover Outro", callback_data='remove_asset_menu')],
+                    [InlineKeyboardButton("🔙 Voltar", callback_data='back_to_investments')],
+                ])
+            )
+        except Exception as e:
+            logger.error(f"Erro ao remover ativo: {str(e)}", exc_info=True)
+            await query.edit_message_text("❌ Ocorreu um erro ao remover o ativo.")
+
+    async def handle_back_to_investments(self, update: Update, context: CallbackContext) -> None:
+        query = update.callback_query
+        await query.answer()
+
+        keyboard = [
+            [InlineKeyboardButton("➕ Incluir Ativo", callback_data='add_asset')],
+            [InlineKeyboardButton("📈 Acompanhar Meus Ativos", callback_data='list_assets')],
+            [InlineKeyboardButton("🗑️ Remover Ativo", callback_data='remove_asset_menu')],
+            # [InlineKeyboardButton("📊 Resumo dos Meus Ativos", callback_data='asset_summary')],
+            [InlineKeyboardButton("🔙 Voltar", callback_data='back_to_menu')]
+        ]
+
+        await query.edit_message_text(
+            "📂 Menu de Investimentos:\nEscolha uma opção:",
+            reply_markup=InlineKeyboardMarkup(keyboard)
         )
         
     async def handle_balance(self, update: Update, context: CallbackContext) -> None:

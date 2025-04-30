@@ -102,23 +102,30 @@ class BotHandlers:
                 return
 
             user_id = update.effective_user.id
-            asset_name = update.message.text.strip().upper()
-            
-            logger.info(f"[BOT] Usuário {user_id} enviou ativo: {asset_name}")
+            user_input = update.message.text.strip().upper()
 
-            if not asset_name:
+            # ✅ Corrige e padroniza o nome do ativo (ex: PETR4 ➝ PETR4.SA)
+            if not user_input.endswith(".SA"):
+                user_input += ".SA"
+
+            logger.info(f"[BOT] Usuário {user_id} enviou ativo: {user_input}")
+
+            if not user_input:
                 await update.message.reply_text("⚠️ O nome do ativo não pode estar vazio. Tente novamente.")
                 return
 
-            if not validate_asset_symbol(asset_name):
-                logger.warning(f"[VALIDAÇÃO] Ativo '{asset_name}' foi rejeitado pela API")
+            # ✅ Valida o nome com base no nome padronizado
+            from src.financIA.utils.asset_validation import validate_asset_symbol
+            if not validate_asset_symbol(user_input):
+                logger.warning(f"[VALIDAÇÃO] Ativo '{user_input}' foi rejeitado pela API")
                 await update.message.reply_text(
                     "❌ Não foi possível validar o ativo agora. "
                     "Verifique o nome (ex: PETR4, MXRF11) ou tente novamente mais tarde."
                 )
                 return
 
-            self.db.save_asset_name_only(user_id=user_id, asset_name=asset_name)
+            # ✅ Salva o nome padronizado no banco
+            self.db.save_asset_name_only(user_id=user_id, asset_name=user_input)
             context.user_data.pop('awaiting_asset_input', None)
 
             keyboard = [
@@ -127,13 +134,16 @@ class BotHandlers:
             ]
 
             await update.message.reply_text(
-                f"✅ Ativo '{asset_name}' adicionado com sucesso!",
+                f"✅ Ativo '{user_input}' adicionado com sucesso!",
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
 
             if 'asset_message_id' in context.user_data:
                 try:
-                    await context.bot.delete_message(chat_id=update.effective_chat.id, message_id=context.user_data['asset_message_id'])
+                    await context.bot.delete_message(
+                        chat_id=update.effective_chat.id,
+                        message_id=context.user_data['asset_message_id']
+                    )
                 except Exception as e:
                     logger.warning(f"Erro ao deletar mensagem de entrada: {str(e)}")
                 finally:
@@ -198,8 +208,8 @@ class BotHandlers:
                     f"│   • P/L: {indicadores['P/L']}\n"
                     f"│   • DY: {indicadores['DY']}\n"
                     f"│   • ROE: {indicadores['ROE']}\n"
-                    f"├ 📈 Recomendação: {recomendacao}\n"
-                    f"└ 📰 Última notícia: {noticia}\n\n"
+                    f"├ 📈 Recomendação: {recomendacao}\n\n"
+                    f"└ 📰 Última notícia: \n{noticia}\n\n"
                 )
 
             response += (
@@ -362,7 +372,7 @@ class BotHandlers:
     async def handle_balance(self, update: Update, context: CallbackContext) -> None:
         try:
             user_id = update.effective_user.id
-            balance = self.db.get_balance(user_id)  # Supondo que o método get_balance exista no seu DB
+            balance = self.db.get_balance(user_id)  
 
             if balance is None:
                 await update.message.reply_text("⚠️ Não foi possível recuperar o saldo.")

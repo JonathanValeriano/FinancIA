@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="FinancIA - Busque informações em tempo real sobre ações e fundos imobiliários">
+  <meta name="keywords" content="ações, FIIs, bolsa de valores, investimentos, telegram bot">
+  <title>FinancIA - Busque informações sobre seus ativos</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="styles/style.css">
+  <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+</head>
+<body class="bg-gray-900 text-white font-sans min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="flex flex-col sm:flex-row justify-between items-center gap-4 p-6 bg-gradient-to-r from-slate-800 to-slate-900 shadow-lg border-b border-slate-700">
+    <div class="flex items-center gap-4">
+      <img src="assets/financia.png" alt="Logo FinancIA" class="w-32 sm:w-40 hover:scale-105 transition-transform">
+      <h1 class="hidden sm:block text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-cyan-400">
+        FinancIA
+      </h1>
+    </div>
+    <div class="flex flex-col sm:flex-row gap-4 items-center">
+      <a href="https://t.me/seubot" target="_blank"
+         class="inline-flex items-center px-6 py-3 text-white font-medium rounded-full bg-gradient-to-r from-cyan-500 to-teal-500 hover:scale-105 transition-transform duration-300 shadow-lg hover:shadow-teal-500/30">
+        <i class="fab fa-telegram mr-2 text-xl"></i> Ir para o Bot no Telegram
+      </a>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container flex-grow">
+    <section class="content text-center">
+      <div class="mb-8">
+        <h1 class="text-4xl font-bold text-teal-400 mb-4">
+          🔎 Buscar Ativos da Bolsa
+        </h1>
+      </div>
+
+      <div class="relative max-w-xl mx-auto">
+        <div class="relative"></div>
+          <input id="searchInput"
+                 type="text"
+                 placeholder="Digite o código do ativo: ex. PETR4, MXRF11..."
+                 class="flex w-full p-4 pl-12 rounded-lg text-black text-lg focus:outline-none focus:ring-2 focus:ring-teal-400 mb-6 shadow-lg"
+                 autocomplete="off">
+          <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl">
+            <i class="fas fa-search"></i>
+          </span>
+        </div>
+        <p class="mb-2 text-lg text-slate-200 max-w-2xl mx-auto">
+          Consulte informações atualizadas de ações e FIIs com facilidade. Dados em tempo real para ajudar em suas decisões de investimento.
+        </p>
+      </div>
+
+      <div id="loading" class="hidden py-8">
+        <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-500 mx-auto"></div>
+      </div>
+
+      <div id="result" class="mt-4 text-left text-slate-100 bg-slate-800 rounded-xl p-6 shadow-inner"></div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features mt-16">
+      <h2 class="text-2xl font-bold mb-8 text-center text-transparent bg-clip-text bg-gradient-to-r from-teal-300 to-cyan-300">
+        Recursos do FinancIA
+      </h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="feature-card p-6 rounded-xl bg-slate-800 hover:bg-slate-700 transition-colors">
+          <div class="text-teal-400 mb-4 text-3xl">
+            <i class="fas fa-bolt"></i>
+          </div>
+          <h3 class="text-xl font-semibold mb-2">Tempo Real</h3>
+          <p class="text-slate-300">Dados atualizados do mercado financeiro em tempo real.</p>
+        </div>
+        <div class="feature-card p-6 rounded-xl bg-slate-800 hover:bg-slate-700 transition-colors">
+          <div class="text-cyan-400 mb-4 text-3xl">
+            <i class="fas fa-robot"></i>
+          </div>
+          <h3 class="text-xl font-semibold mb-2">Bot Inteligente</h3>
+          <p class="text-slate-300">Acesse diretamente pelo Telegram com comandos simples.</p>
+        </div>
+        <div class="feature-card p-6 rounded-xl bg-slate-800 hover:bg-slate-700 transition-colors">
+          <div class="text-teal-300 mb-4 text-3xl">
+            <i class="fas fa-chart-line"></i>
+          </div>
+          <h3 class="text-xl font-semibold mb-2">Análises</h3>
+          <p class="text-slate-300">Informações essenciais para suas análises de investimento.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- QR Code Section -->
+    <section class="qr-section mt-16 p-8 bg-slate-800 rounded-xl">
+      <div class="max-w-md mx-auto">
+        <h2 class="text-xl font-semibold text-center text-slate-300 mb-6">
+          <i class="fas fa-qrcode mr-2"></i> Escaneie para acessar diretamente
+        </h2>
+        <div class="flex flex-col items-center">
+          <img src="assets/qr-code.png" alt="QR Code" class="qr-code w-48 h-48 p-4 bg-white rounded-lg shadow-lg">
+          <p class="mt-4 text-slate-400 text-sm">Ou clique no botão acima</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="text-center text-slate-500 text-sm py-6 border-t border-slate-800 bg-slate-900">
+    <div class="container mx-auto px-4">
+      <div class="flex justify-center gap-6 mb-4">
+        <a href="#" class="text-slate-400 hover:text-teal-400 transition-colors">
+          <i class="fab fa-telegram text-xl"></i>
+        </a>
+        <a href="#" class="text-slate-400 hover:text-teal-400 transition-colors">
+          <i class="fab fa-github text-xl"></i>
+        </a>
+        <a href="#" class="text-slate-400 hover:text-teal-400 transition-colors">
+          <i class="fab fa-twitter text-xl"></i>
+        </a>
+      </div>
+      <p>Desenvolvido por Jonathan Valeriano • FinancIA © 2025</p>
+      <p class="mt-2 text-xs text-slate-600">Os dados financeiros são fornecidos por terceiros e podem sofrer atrasos.</p>
+    </div>
+  </footer>
+
+  <script src="scripts/main.js"></script>
+</body>
+</html>

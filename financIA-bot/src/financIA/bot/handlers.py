@@ -215,7 +215,9 @@ class BotHandlers:
             response += (
                 f"\n📌 Resumo geral:\n"
                 f"Sua carteira possui {len(assets)} ativos.\n"
-                f"Recomendações:\n ✅ Manter: {manter}\n ⚠️ Observar: {observar}\n 🛑 Vender: {vender}."
+                f"Recomendações:\n ✅ Manter: {manter}\n ⚠️ Observar: {observar}\n 🛑 Vender: {vender}.\n\n"
+                f"🔗 Para mais informações sobre seus ativos, acesse:\n"
+                f"https://financia-bot.netlify.app/financia-landing/ativos/"
             )
 
             keyboard = [[InlineKeyboardButton("🔙 Voltar", callback_data='back_to_investments')]]

@@ -4,57 +4,182 @@
   <meta charset="UTF-8" />
   <meta name="google-adsense-account" content="ca-pub-3355001194922273">
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="FinancIA Bot - Seu assistente financeiro no Telegram para análise de investimentos e gestão financeira">
+  <meta name="keywords" content="bot telegram, finanças, investimentos, bolsa de valores, análise fundamentalista">
   <title>FinancIA Bot - Seu assistente financeiro no Telegram</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <!-- Google AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3355001194922273"
   crossorigin="anonymous"></script>
+  <style>
+    .feature-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+  </style>
 </head>
-<body class="bg-gray-900 text-white font-sans">
+<body class="bg-gray-900 text-white font-sans min-h-screen flex flex-col">
 
   <!-- HEADER -->
-  <header class="text-center py-10 px-6">
-    <img src="bot-landing-page/assets/FinancIA.jpeg" alt="Logo FinancIA" class="mx-auto w-28 rounded-lg shadow-lg mb-4">
-    <h1 class="text-4xl font-bold text-teal-400">FinancIA</h1>
-    <p class="text-gray-300 mt-2 text-lg max-w-xl mx-auto">
-      Um bot inteligente no Telegram que transforma seus dados financeiros em decisões mais rápidas e conscientes.
-    </p>
+  <header class="text-center py-10 px-6 bg-gradient-to-b from-gray-800 to-gray-900">
+    <div class="max-w-4xl mx-auto">
+      <img src="bot-landing-page/assets/FinancIA.jpeg" alt="Logo FinancIA" class="mx-auto w-28 rounded-lg shadow-lg mb-4 border-2 border-teal-400">
+      <h1 class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-cyan-400">FinancIA</h1>
+      <p class="text-gray-300 mt-2 text-lg max-w-xl mx-auto">
+        Seu assistente financeiro no Telegram que transforma dados em decisões inteligentes.
+      </p>
+    </div>
   </header>
 
-  <!-- SOBRE O PROJETO -->
-  <section class="max-w-4xl mx-auto px-6 py-12">
-    <h2 class="text-2xl font-bold mb-4 text-white">📌 Sobre o Projeto</h2>
-    <p class="text-gray-300 mb-6 leading-relaxed">
-      O <strong>FinancIA</strong> é um assistente financeiro criado no Telegram para ajudar usuários a organizarem sua vida financeira
-      de forma automática, simples e eficiente. Utilizando inteligência artificial, ele categoriza despesas, acompanha investimentos, analisa indicadores como <strong>P/L</strong>, <strong>DY</strong>, <strong>ROE</strong> e ainda traz <strong>notícias relevantes</strong> para os ativos que você acompanha.
-    </p>
+  <!-- AdSense Top Banner -->
+  <div class="text-center py-2 px-4 bg-gray-800">
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="ca-pub-3355001194922273"
+         data-ad-slot="1234567890"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
+    <script>
+         (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+  </div>
 
-    <div class="grid md:grid-cols-2 gap-6">
-      <ul class="space-y-4">
-        <li class="bg-gray-800 p-4 rounded-md shadow-md">📥 Importe extratos bancários e veja seus saldos consolidados</li>
-        <li class="bg-gray-800 p-4 rounded-md shadow-md">🔍 Acompanhe seus investimentos em tempo real</li>
-        <li class="bg-gray-800 p-4 rounded-md shadow-md">📊 Receba insights baseados em indicadores fundamentalistas</li>
-        <li class="bg-gray-800 p-4 rounded-md shadow-md">📰 Fique por dentro das principais notícias do mercado</li>
-        <li class="bg-gray-800 p-4 rounded-md shadow-md">🤖 Tudo via Telegram, sem instalar nada!</li>
-      </ul>
+  <!-- MAIN CONTENT -->
+  <main class="flex-grow">
+      <!-- SOBRE O PROJETO -->
+        <section class="max-w-4xl mx-auto px-6 py-12">
+          <h2 class="text-2xl font-bold mb-4 text-white">📌 Sobre o Projeto</h2>
+          <p class="text-gray-300 mb-6 leading-relaxed">
+            O <strong>FinancIA</strong> é um assistente financeiro criado no Telegram para ajudar usuários a organizarem sua vida financeira
+            de forma automática, simples e eficiente. Utilizando inteligência artificial, ele categoriza despesas, acompanha investimentos, analisa indicadores como <strong>P/L</strong>, <strong>DY</strong>, <strong>ROE</strong> e ainda traz <strong>notícias relevantes</strong> para os ativos que você acompanha.
+          </p>
 
-      <div class="text-center flex flex-col items-center justify-center">
-        <p class="text-lg font-semibold mb-4">Escaneie para começar agora:</p>
-        <img src="bot-landing-page/assets/qr-code.png" alt="QR Code para o bot" class="w-40 border-4 border-teal-400 rounded-md shadow-lg">
-        <a href="https://t.me/VFinancIA_bot" target="_blank" class="mt-6 inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white font-semibold text-lg rounded-full shadow-lg border border-white/40 transition-all">
-          <img src="https://cdn-icons-png.flaticon.com/512/2111/2111646.png" alt="Telegram" class="w-6 h-6">
-          Ir para o Bot no Telegram
-        </a>  
-        <a href="financia-landing/ativos/index.html" class="mt-6 inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white font-semibold text-lg rounded-full shadow-lg border border-white/40 transition-all">
-          📰 Informações sobre Ativos
-        </a>              
+          <!-- <div class="grid md:grid-cols-2 gap-6">
+            <ul class="space-y-4">
+              <li class="bg-gray-800 p-4 rounded-md shadow-md">📥 Importe extratos bancários e veja seus saldos consolidados</li>
+              <li class="bg-gray-800 p-4 rounded-md shadow-md">🔍 Acompanhe seus investimentos em tempo real</li>
+              <li class="bg-gray-800 p-4 rounded-md shadow-md">📊 Receba insights baseados em indicadores fundamentalistas</li>
+              <li class="bg-gray-800 p-4 rounded-md shadow-md">📰 Fique por dentro das principais notícias do mercado</li>
+              <li class="bg-gray-800 p-4 rounded-md shadow-md">🤖 Tudo via Telegram, sem instalar nada!</li>
+            </ul> -->
+                </div>
+                <div class="grid md:grid-cols-2 gap-6 items-center">
+                  <ul class="space-y-4">
+                  <li class="bg-gray-800 p-4 rounded-md shadow-md">📥 Importe extratos bancários e veja seus saldos consolidados</li>
+                  <li class="bg-gray-800 p-4 rounded-md shadow-md">🔍 Acompanhe seus investimentos em tempo real</li>
+                  <li class="bg-gray-800 p-4 rounded-md shadow-md">📊 Receba insights baseados em indicadores fundamentalistas</li>
+                  <li class="bg-gray-800 p-4 rounded-md shadow-md">📰 Fique por dentro das principais notícias do mercado</li>
+                  <li class="bg-gray-800 p-4 rounded-md shadow-md">🤖 Tudo via Telegram, sem instalar nada!</li>
+                  </ul>
+                  <div class="text-center flex flex-col items-center justify-center">
+                  <p class="text-lg font-semibold mb-4">Escaneie para começar agora:</p>
+                  <img src="bot-landing-page/assets/qr-code.png" alt="QR Code para o bot" class="w-40 border-4 border-teal-400 rounded-md shadow-lg">
+                  <a href="https://t.me/VFinancIA_bot" target="_blank" class="mt-6 inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white font-semibold text-lg rounded-full shadow-lg border border-white/40 transition-all">
+                    <img src="https://cdn-icons-png.flaticon.com/512/2111/2111646.png" alt="Telegram" class="w-6 h-6">
+                    Ir para o Bot no Telegram
+                  </a>  
+                  <a href="financia-landing/ativos/index.html" class="mt-6 inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white font-semibold text-lg rounded-full shadow-lg border border-white/40 transition-all">
+                    📰 Informações sobre Ativos
+                  </a>
+                  </div>
+                </div>
+
+          <!-- AdSense Middle Rectangle -->
+          <div class="text-center my-6">
+            <ins class="adsbygoogle"
+                 style="display:block"
+                 data-ad-client="ca-pub-3355001194922273"
+                 data-ad-slot="0987654321"
+                 data-ad-format="rectangle"
+                 data-full-width-responsive="true"></ins>
+            <script>
+                 (adsbygoogle = window.adsbygoogle || []).push({});
+            </script>
+          </div>
+        </div>
+
+    </section>
+
+    <!-- BENEFÍCIOS -->
+    <section class="bg-gray-800 py-12">
+      <div class="max-w-4xl mx-auto px-6">
+        <h2 class="text-2xl font-bold mb-8 text-center text-white">✨ Benefícios Exclusivos</h2>
+        
+        <div class="grid md:grid-cols-3 gap-6">
+          <div class="feature-card bg-gray-700 p-6 rounded-xl shadow-md transition-all duration-300">
+            <div class="text-teal-400 mb-4 text-3xl">
+              <i class="fas fa-clock"></i>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Economize Tempo</h3>
+            <p class="text-gray-300">Automatize análises que levariam horas em segundos.</p>
+          </div>
+          
+          <div class="feature-card bg-gray-700 p-6 rounded-xl shadow-md transition-all duration-300">
+            <div class="text-cyan-400 mb-4 text-3xl">
+              <i class="fas fa-lightbulb"></i>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Tomada de Decisão</h3>
+            <p class="text-gray-300">Insights baseados em dados para investir melhor.</p>
+          </div>
+          
+          <div class="feature-card bg-gray-700 p-6 rounded-xl shadow-md transition-all duration-300">
+            <div class="text-teal-300 mb-4 text-3xl">
+              <i class="fas fa-mobile-alt"></i>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Acesso Fácil</h3>
+            <p class="text-gray-300">Tudo no Telegram, sem apps adicionais.</p>
+          </div>
+        </div>
       </div>
-    </div>
-  </section>
+    </section>
+  </main>
+
+  <!-- AdSense Bottom Banner -->
+  <div class="text-center py-4 px-2 bg-gray-800">
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="ca-pub-3355001194922273"
+         data-ad-slot="1122334455"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
+    <script>
+         (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+  </div>
 
   <!-- FOOTER -->
-  <footer class="text-center py-8 border-t border-gray-800 mt-12 text-gray-500 text-sm">
-    Desenvolvido por Jonathan Valeriano • FinancIA © 2025
+  <footer class="text-center py-8 border-t border-gray-800 text-gray-500 text-sm bg-gray-900">
+    <div class="max-w-4xl mx-auto px-6">
+      <div class="flex justify-center gap-6 mb-4">
+        <a href="#" class="text-gray-400 hover:text-teal-400 transition-colors text-xl">
+          <i class="fab fa-telegram"></i>
+        </a>
+        <a href="#" class="text-gray-400 hover:text-teal-400 transition-colors text-xl">
+          <i class="fab fa-github"></i>
+        </a>
+        <a href="#" class="text-gray-400 hover:text-teal-400 transition-colors text-xl">
+          <i class="fab fa-twitter"></i>
+        </a>
+      </div>
+      <p>Desenvolvido por Jonathan Valeriano • FinancIA © 2025</p>
+      <p class="mt-2 text-xs text-gray-600">Os dados financeiros são fornecidos por terceiros e podem sofrer atrasos.</p>
+    </div>
   </footer>
 
+  <!-- Ativação dos anúncios -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Carrega todos os anúncios
+      (adsbygoogle = window.adsbygoogle || []).push({});
+      
+      // Força recarregamento após 2 segundos
+      setTimeout(function(){
+        if(typeof adsbygoogle !== 'undefined') {
+          adsbygoogle.push({});
+        }
+      }, 2000);
+    });
+  </script>
 </body>
 </html>
